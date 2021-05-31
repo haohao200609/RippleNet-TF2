@@ -1,3 +1,4 @@
+#coding:utf-8
 import argparse
 import numpy as np
 
@@ -6,6 +7,9 @@ SEP = dict({'movie': '::', 'book': ';', 'news': '\t'})
 THRESHOLD = dict({'movie': 4, 'book': 0, 'news': 0})
 SKIP_LINE = dict({'movie': 0, 'book': 1, 'news': 0})
 
+"""
+把数据库相应的物品id，改变成为从0开始id
+"""
 
 def read_item_index_to_entity_id_file():
     file = 'data/' + DATASET + '/item_index2entity_id_rehashed.txt'
@@ -17,8 +21,17 @@ def read_item_index_to_entity_id_file():
         item_index_old2new[item_index] = i
         entity_id2index[satori_id] = i
         i += 1
+    print('item_index_old2new:'+str(len(item_index_old2new.keys())))
+    print('entity_id2index:' + str(len(entity_id2index.keys())))
+    print('i:' + str(i))
 
+"""
+第一行
+1::1193::5::978300760
 
+把评分，解析成为最后输出正负样本ratings_final.txt，玩家评分超过xxx是正样本，label是1，负样本是0，没有看过的是负样本，但是对于游戏可能这个要重新分一下
+
+"""
 def convert_rating():
     file = 'data/' + DATASET + '/' + RATING_FILE_NAME[DATASET]
     skip_line = SKIP_LINE[DATASET] - 1
@@ -126,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dataset', type=str, default='movie', help='which dataset to preprocess')
     args = parser.parse_args()
     DATASET = args.dataset
-
+    # 这个是KG里面的entity编号
     entity_id2index = dict()
     relation_id2index = dict()
     item_index_old2new = dict()
