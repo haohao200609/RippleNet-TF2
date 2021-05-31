@@ -141,11 +141,19 @@ if __name__ == '__main__':
     DATASET = args.dataset
     # 这个是KG里面的entity编号
     entity_id2index = dict()
+    """
+    大概就集中类型
+    film.actor.film
+    film.film.genre
+    film.film.country
+    一共就12中类型
+    """
     relation_id2index = dict()
     item_index_old2new = dict()
 
     read_item_index_to_entity_id_file()
     convert_rating()
+    # entity id和relation ID这样的三元结构，转换为从0开始的index
     convert_kg()
 
     print('done')
