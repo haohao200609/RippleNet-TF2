@@ -1,3 +1,4 @@
+#coding:utf-8
 import os
 import numpy as np
 import collections
@@ -13,7 +14,9 @@ class LoadData:
         n_entity, n_relation, kg = self.load_kg()
         ripple_set = self.get_ripple_set(kg, user_history_dict)
         return train_data, test_data, n_entity, n_relation, ripple_set
-
+    """
+    返回的全部都是有交互的数据
+    """
     def load_rating(self):
         print('reading rating file ...')
 
@@ -34,6 +37,9 @@ class LoadData:
         test_indices = np.random.choice(n_ratings, size=int(n_ratings * test_ratio), replace=False)
         train_indices = set(range(n_ratings)) - set(test_indices)
 
+        test_indices_old = test_indices[:]
+        train_indices_old = list(train_indices)[:]
+
         # traverse training data, only keeping the users with positive ratings
         user_history_dict = dict()
         for i in train_indices:
@@ -44,7 +50,9 @@ class LoadData:
                 if user not in user_history_dict:
                     user_history_dict[user] = []
                 user_history_dict[user].append(item)
-
+        """
+        user_history_dict只是保存所有有过交互的user的信息，下面train_indices是为了过滤一些，没有再train_indice只在test里面有过的user
+        """
         train_indices = [i for i in train_indices if rating_np[i][0] in user_history_dict]
         test_indices = [i for i in test_indices if rating_np[i][0] in user_history_dict]
 
@@ -112,5 +120,5 @@ class LoadData:
                     memories_r = [memories_r[i] for i in indices]
                     memories_t = [memories_t[i] for i in indices]
                     ripple_set[user].append((memories_h, memories_r, memories_t))
-
+        # ripple_set: [user][(第一跳的内容),(第二跳的内容)]，第一跳内容(head_list,relation_list,tail_list)
         return ripple_set
