@@ -54,6 +54,7 @@ class BuildModel:
             memories_h[hop] = np.array([self.ripple_set[user][hop][0] for user in data[:, 0]])
             memories_r[hop] = np.array([self.ripple_set[user][hop][1] for user in data[:, 0]])
             memories_t[hop] = np.array([self.ripple_set[user][hop][2] for user in data[:, 0]])
+        result=[items, labels] + memories_h + memories_r + memories_t
         return [items, labels] + memories_h + memories_r + memories_t, labels
 
     def train(self):

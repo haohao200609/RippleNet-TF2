@@ -102,7 +102,7 @@ def convert_kg():
         files.append(open('data/' + DATASET + '/kg_part2_rehashed.txt', encoding='utf-8'))
     else:
         files.append(open('data/' + DATASET + '/kg_rehashed.txt', encoding='utf-8'))
-
+    total_triple_count=0
     for file in files:
         for line in file:
             array = line.strip().split('\t')
@@ -126,6 +126,7 @@ def convert_kg():
             relation = relation_id2index[relation_old]
 
             writer.write('%d\t%d\t%d\n' % (head, relation, tail))
+            total_triple_count += 1
 
     writer.close()
     print('number of entities (containing items): %d' % entity_cnt)
