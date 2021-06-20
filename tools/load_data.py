@@ -65,6 +65,56 @@ class LoadData:
 
         return train_data, test_data, user_history_dict
 
+    def parse_hist_buy_info(self,hist_buy_list,entity_map_dict):
+        hist_buy_info=eval(hist_buy_list)
+        idx_hist_list=[]
+        for item in hist_buy_info:
+            idx=entity_map_dict[item]
+            idx_hist_list.append(idx)
+        return
+
+    def load_choujiang_data(self,entity_map_dict,relation_map_dict):
+        print('reading choujiang file...')
+        choujiang_file=self.data_path  + '/choujiang_data.txt'
+        total_data=[]
+        for i, line in enumerate(open(choujiang_file)):
+            dt, hostnum, uid, item_id, hist_buy_list, effect_beast_mp_left, effect_hp_left, effect_beast_hp_left, cur_lingqi, effect_mp_left,beast_mp_seg,hp_seg,best_hp_seg,lingqi_seg,mp_seg=line.strip().split('\t')
+            hostnum=int(hostnum)
+            uid=int(uid)
+            item_index=entity_map_dict(item_id)
+            result=[]
+
+        return 1
+        # return train_data, test_data, user_history_dict
+
+    def load_choujiang_kg(self):
+        print('reading KG file ...')
+        file_name = self.data_path + '/choujiang_kg.txt'
+
+        entity_map_dict={}
+        relation_map_dict={}
+        entity_idx=0
+        relaton_idx=0
+        kg = collections.defaultdict(list)
+        for i, line in enumerate(open(file_name)):
+            start_node,relation_type,end_node=line.strip().split('\t')
+            if start_node not in entity_map_dict.keys():
+                entity_map_dict[start_node]=entity_idx
+                entity_idx+=1
+            if relation_type not in relation_map_dict.keys():
+                relation_map_dict[relation_type]=relaton_idx
+                relaton_idx+=1
+            if end_node not in entity_map_dict.keys():
+                entity_map_dict[end_node]=entity_idx
+                entity_idx+=1
+            head=entity_map_dict[start_node]
+            relation=relation_map_dict[relation_type]
+            tail=entity_map_dict[end_node]
+            kg[head].append((tail, relation))
+        n_entity=len(entity_map_dict.keys())
+        n_relation=len(relation_map_dict.keys())
+        return n_entity, n_relation, kg,entity_map_dict,relation_map_dict
+
     def load_kg(self):
         print('reading KG file ...')
 
