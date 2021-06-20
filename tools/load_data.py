@@ -52,6 +52,10 @@ class LoadData:
                 user_history_dict[user].append(item)
         """
         user_history_dict只是保存所有有过交互的user的信息，下面train_indices是为了过滤一些，没有再train_indice只在test里面有过的user
+        
+        这里统计的是，玩家训练集里面所有的历史购买的数据，但是玩家history_dict在训练数据里面的时候，是没有区分任何先后顺序的，也就是我再训练的时候，我周一看了A，周二看了B，周三看了C，我的特征里面，就是认为看了A和C的玩家，都会看B。用这样的一个特征取进行预测。我新按照这样的一版，去试一试，看看结果吧
+        
+        这样的处理有好处，就是模型能学到，看了A和C的人会去看B，如果有时序，模型只能学到看了A的人会去看B。但是movie len是要给玩家推送我没看过的电影，药品购买，则是玩家历史买了物品之后，我还继续给他退
         """
         train_indices = [i for i in train_indices if rating_np[i][0] in user_history_dict]
         test_indices = [i for i in test_indices if rating_np[i][0] in user_history_dict]

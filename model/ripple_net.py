@@ -30,7 +30,7 @@ class RippleNet(BuildModel):
     def build_model(self):
         # Input Tensor
         item_inputs = Input(shape=(), name="items", dtype=tf.int32)
-        label_inputs = Input(shape=(), name="labels", dtype=tf.float32)
+        # label_inputs = Input(shape=(), name="labels", dtype=tf.float32)
         h_inputs = []
         r_inputs = []
         t_inputs = []
@@ -111,15 +111,18 @@ class RippleNet(BuildModel):
         scores_normalized = Activation('sigmoid', name='score')(scores)
 
         # Model
-        model = Model(inputs=[item_inputs, label_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
+        # model = Model(inputs=[item_inputs, label_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
+
+        model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
 
         # Loss
-        base_loss = binary_crossentropy(label_inputs, scores_normalized)  # base loss
+        # base_loss = binary_crossentropy(label_inputs, scores_normalized)  # base loss
 
         kge_loss = 0  # kg loss
         for hop in range(self.n_hop):
             h_expanded = ExpandDims(2)(h_embeddings[hop])
             t_expanded = ExpandDims(3)(t_embeddings[hop])
+            # @矩阵相乘
             hRt = Squeeze()(h_expanded @ r_embeddings[hop] @ t_expanded)
             kge_loss += keras.backend.mean(Activation('sigmoid')(hRt))
 
@@ -129,8 +132,15 @@ class RippleNet(BuildModel):
             l2_loss += keras.backend.sum(keras.backend.square(r_embeddings[hop]))
             l2_loss += keras.backend.sum(keras.backend.square(t_embeddings[hop]))
 
-        model.add_loss(base_loss)
+        # model.add_loss(base_loss)
         model.add_loss(self.l2_weight * l2_loss)
         model.add_loss(self.kge_weight * -kge_loss)
-        model.compile(optimizer=Adam(self.lr), metrics=[binary_accuracy, auc, f1, precision, recall])
+
+
+        # model.compile(optimizer=Adam(self.lr), metrics=[binary_accuracy, auc, f1, precision, recall])
+        """
+        使用这个loss里面的，是就不需要传入label的情况了
+        """
+        model.compile(loss = 'binary_crossentropy',optimizer=Adam(self.lr), metrics=[binary_accuracy, auc, f1, precision, recall])
+
         return model
