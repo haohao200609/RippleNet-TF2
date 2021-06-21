@@ -110,10 +110,17 @@ class RippleNet(BuildModel):
         scores = Squeeze()(keras.backend.sum(item_embeddings * y, axis=1))
         scores_normalized = Activation('sigmoid', name='score')(scores)
 
+
+        """
+        尝试了输入不用，只要是一个list，然后fit的X和这个inputs对应起来，就ok了
+        """
+
         # Model
         # model = Model(inputs=[item_inputs, label_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
 
-        model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
+        # model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
+
+        model = Model(inputs=[item_inputs, h_inputs , r_inputs , t_inputs], outputs=scores_normalized)
 
         # Loss
         # base_loss = binary_crossentropy(label_inputs, scores_normalized)  # base loss

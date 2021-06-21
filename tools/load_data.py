@@ -81,7 +81,7 @@ class LoadData:
 
     def load_choujiang_file(self,entity_map_dict,relation_map_dict):
         print('reading choujiang file...')
-        choujiang_file=self.data_path  + '/choujiang_data.txt'
+        choujiang_file=self.data_path  + '/tf_kg_train.txt'
         total_data=[]
         for i, line in enumerate(open(choujiang_file)):
             dt, hostnum, uid, item_id, label,hist_buy_list, effect_beast_mp_left, effect_hp_left, effect_beast_hp_left, cur_lingqi, effect_mp_left,beast_mp_seg,hp_seg,best_hp_seg,lingqi_seg,mp_seg=line.strip().split('\t')
@@ -114,7 +114,7 @@ class LoadData:
 
     def load_choujiang_kg(self):
         print('reading KG file ...')
-        file_name = self.data_path + '/choujiang_kg.txt'
+        file_name = self.data_path + '/kg_build.txt'
 
         entity_map_dict={}
         relation_map_dict={}

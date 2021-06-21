@@ -55,6 +55,8 @@ class my_RippleNet:
     def build_model(self):
         # Input Tensor
         item_inputs = Input(shape=(), name="items", dtype=tf.int32)
+
+        remain_inputs= Input(shape=(), name="remain", dtype=tf.int32)
         # label_inputs = Input(shape=(), name="labels", dtype=tf.float32)
         h_inputs = []
         r_inputs = []
@@ -138,7 +140,9 @@ class my_RippleNet:
         # Model
         # model = Model(inputs=[item_inputs, label_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
 
-        model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
+        # model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
+
+        model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs+[remain_inputs], outputs=scores_normalized)
 
         # Loss
         # base_loss = binary_crossentropy(label_inputs, scores_normalized)  # base loss
@@ -250,17 +254,22 @@ class my_RippleNet:
                 memories_t_dict[hop].append(ripple_set[2])
 
         for hop in range(self.n_hop):
-            memories_h[hop]=memories_h_dict[hop]
-            memories_r[hop] = memories_r_dict[hop]
-            memories_t[hop] = memories_t_dict[hop]
+            memories_h[hop]=  np.array(memories_h_dict[hop])
+            memories_r[hop] = np.array(memories_r_dict[hop])
+            memories_t[hop] = np.array(memories_t_dict[hop])
 
-        x=[item_list, label_list, memories_h , memories_r , memories_t,remain_list]
+        """
+        相加和list聚合最后的结果是不一样的，相加，会有7个item的list，x_other只有4个item的list
+        memories_r本身就是list套list，所以不怕
+        """
+        x=[item_list] + memories_h + memories_r + memories_t+ [remain_list],label_list
         return x
 
     def train(self):
         print("train model ...")
         self.model.summary()
-        X, y = self.data_parse(self.train_data)
+        # X, y = self.data_parse(self.train_data)
+        X, y = self.choujiang_data_parse(self.train_data)
         tensorboard = TensorBoard(log_dir=self.log_path, histogram_freq=1)
         early_stopper = EarlyStopping(patience=self.patience, verbose=1)
         model_checkpoint = ModelCheckpoint(self.save_path, verbose=1, save_best_only=True)
@@ -276,7 +285,8 @@ class my_RippleNet:
         model = self.build_model()
         model.load_weights(self.save_path)
         print("evaluate model ...")
-        X, y = self.data_parse(self.test_data)
+        # X, y = self.data_parse(self.test_data)
+        X, y = self.choujiang_data_parse(self.test_data)
         score = model.evaluate(X, y, batch_size=self.batch_size)
         print("- loss: {} "
               "- binary_accuracy: {} "
@@ -288,7 +298,8 @@ class my_RippleNet:
     def predict(self):
         model = self.build_model()
         model.load_weights(self.save_path)
-        X, y = self.data_parse(self.test_data)
+        # X, y = self.data_parse(self.test_data)
+        X, y = self.choujiang_data_parse(self.test_data)
         pred = model.predict(X, batch_size=self.batch_size)
         result = [1 if x > 0.5 else 0 for x in pred]
         return result

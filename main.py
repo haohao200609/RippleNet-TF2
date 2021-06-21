@@ -2,13 +2,14 @@ import os
 import argparse
 import numpy as np
 from model.ripple_net import RippleNet
+from model.my_model import my_RippleNet
 
 np.random.seed(555)
 
 base_path = os.getcwd()
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='movie', help='which dataset to use')
-parser.add_argument('--dim', type=int, default=16, help='dimension of entity and relation embeddings')
+parser.add_argument('--dim', type=int, default=7, help='dimension of entity and relation embeddings')
 parser.add_argument('--n_hop', type=int, default=2, help='maximum hops')
 parser.add_argument('--kge_weight', type=float, default=0.01, help='weight of the KGE term')
 parser.add_argument('--l2_weight', type=float, default=1e-7, help='weight of the l2 regularization term')
@@ -24,7 +25,12 @@ parser.add_argument('--using_all_hops', type=bool, default=True,
 parser.add_argument('--base_path', type=str, default=base_path, help='base work dir')
 
 args = parser.parse_args()
-ripple_net = RippleNet(args)
+# ripple_net = RippleNet(args)
+# ripple_net.train()
+# ripple_net.evaluate()
+# ripple_net.predict()
+
+# 我的训练数据
+ripple_net=my_RippleNet(args)
 ripple_net.train()
 ripple_net.evaluate()
-# ripple_net.predict()
