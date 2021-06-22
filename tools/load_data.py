@@ -17,7 +17,7 @@ class LoadData:
 
     def load_choujiang_data(self):
         n_entity, n_relation, kg, entity_map_dict, relation_map_dict=self.load_choujiang_kg()
-        train_data, test_data=self.load_choujiang_file()
+        train_data, test_data=self.load_choujiang_file(entity_map_dict)
         return train_data, test_data,n_entity, n_relation, kg, entity_map_dict, relation_map_dict
 
     """
@@ -79,34 +79,39 @@ class LoadData:
             idx_hist_list.append(idx)
         return idx_hist_list
 
-    def load_choujiang_file(self,entity_map_dict,relation_map_dict):
+    def load_choujiang_file(self,entity_map_dict):
         print('reading choujiang file...')
         choujiang_file=self.data_path  + '/tf_kg_train.txt'
+        choujiang_file = self.data_path + '/tf_kg_train_all.txt'
         total_data=[]
         for i, line in enumerate(open(choujiang_file)):
-            dt, hostnum, uid, item_id, label,hist_buy_list, effect_beast_mp_left, effect_hp_left, effect_beast_hp_left, cur_lingqi, effect_mp_left,beast_mp_seg,hp_seg,best_hp_seg,lingqi_seg,mp_seg=line.strip().split('\t')
-            hostnum=int(hostnum)
-            uid=int(uid)
-            label=int(label)
-            item_index=entity_map_dict(item_id)
-            hist_buy_idx_list=self.parse_hist_buy_info(hist_buy_list,entity_map_dict)
-            beast_mp_seg='pet_blue'+'_remain'+'~'+str(beast_mp_seg)
-            hp_seg='human_red'+'_remain'+'~'+str(hp_seg)
-            best_hp_seg='pet_red'+'_remain'+'~'+str(best_hp_seg)
-            lingqi_seg = 'huimengyin' + '_remain' + '~' + str(lingqi_seg)
-            mp_seg = 'human_blue' + '_remain' + '~' + str(mp_seg)
+            dt, hostnum, uid, item_id,hist_buy_list,label, effect_beast_mp_left, effect_hp_left, effect_beast_hp_left, cur_lingqi, effect_mp_left,beast_mp_seg,hp_seg,best_hp_seg,lingqi_seg,mp_seg=line.strip().split('\t')
+
+            if item_id in entity_map_dict.keys():
+                hostnum=int(hostnum)
+                uid=int(uid)
+                label=int(label)
+                item_index=entity_map_dict[item_id]
+
+                hist_buy_idx_list=self.parse_hist_buy_info(hist_buy_list,entity_map_dict)
+                beast_mp_seg='pet_blue'+'_remain'+'~'+str(beast_mp_seg)
+                hp_seg='human_red'+'_remain'+'~'+str(hp_seg)
+                best_hp_seg='pet_red'+'_remain'+'~'+str(best_hp_seg)
+                lingqi_seg = 'huimengyin' + '_remain' + '~' + str(lingqi_seg)
+                mp_seg = 'human_blue' + '_remain' + '~' + str(mp_seg)
 
 
-            remain_list=[beast_mp_seg,hp_seg,best_hp_seg,lingqi_seg,mp_seg]
-            remain_idx_list=list(map(entity_map_dict.get,remain_list))
-            result=[hostnum,uid,item_index,label,hist_buy_idx_list,remain_idx_list]
-            total_data.append(result)
+                remain_list=[beast_mp_seg,hp_seg,best_hp_seg,lingqi_seg,mp_seg]
+                # TODO 目前remain_list在KG里面是没有node的，需要恢复一下，但是不要有node
+                remain_idx_list=list(map(entity_map_dict.get,remain_list))
+                result=[hostnum,uid,item_index,label,hist_buy_idx_list,remain_idx_list]
+                total_data.append(result)
         # 转换为np array才可以使用idx的映射
         total_data=np.array(total_data)
         test_ratio = 0.2
         n_ratings = len(total_data)
         test_indices = np.random.choice(n_ratings, size=int(n_ratings * test_ratio), replace=False)
-        train_indices = set(range(n_ratings)) - set(test_indices)
+        train_indices = list(set(range(n_ratings)) - set(test_indices))
         train_data = total_data[train_indices]
         test_data = total_data[test_indices]
         return train_data,test_data

@@ -54,10 +54,17 @@ class BuildModel:
             memories_h[hop] = np.array([self.ripple_set[user][hop][0] for user in data[:, 0]])
             memories_r[hop] = np.array([self.ripple_set[user][hop][1] for user in data[:, 0]])
             memories_t[hop] = np.array([self.ripple_set[user][hop][2] for user in data[:, 0]])
-        x=[items, labels, memories_h , memories_r , memories_t]
+        """
+        相加和list聚合最后的结果是不一样的，相加，会有7个item的list，x_other只有4个item的list
+        """
+        x=[items] + memories_h + memories_r + memories_t
+        x_other=[items,memories_h,memories_r,memories_t]
         # return [items, labels] + memories_h + memories_r + memories_t, labels
 
-        return [items] + memories_h + memories_r + memories_t, labels
+        # return [items] + memories_h + memories_r + memories_t, labels
+
+        return x_other, labels
+
 
     def train(self):
         print("train model ...")

@@ -142,7 +142,11 @@ class my_RippleNet:
 
         # model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs, outputs=scores_normalized)
 
-        model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs+[remain_inputs], outputs=scores_normalized)
+        # model = Model(inputs=[item_inputs] + h_inputs + r_inputs + t_inputs+[remain_inputs], outputs=scores_normalized)
+
+        model = Model(inputs=[item_inputs, h_inputs , r_inputs , t_inputs , remain_inputs],
+                      outputs=scores_normalized)
+
 
         # Loss
         # base_loss = binary_crossentropy(label_inputs, scores_normalized)  # base loss
@@ -169,8 +173,11 @@ class my_RippleNet:
         """
         使用这个loss里面的，是就不需要传入label的情况了
         """
+        # model.compile(loss='binary_crossentropy', optimizer=Adam(self.lr),
+        #               metrics=[binary_accuracy, auc, f1, precision, recall])
+
         model.compile(loss='binary_crossentropy', optimizer=Adam(self.lr),
-                      metrics=[binary_accuracy, auc, f1, precision, recall])
+                      metrics=[ tf.keras.metrics.AUC(), tf.keras.metrics.Precision(thresholds=0.3), tf.keras.metrics.Recall(thresholds=0.3)])
 
         return model
 
@@ -180,12 +187,13 @@ class my_RippleNet:
         # memories_r = [memories_r[i] for i in indices]
         # memories_t = [memories_t[i] for i in indices]
         # ripple_set[user].append((memories_h, memories_r, memories_t))
-        memories_h = []
-        memories_r = []
-        memories_t = []
 
-        ripple_set = defaultdict(list)
+
+        ripple_set = {}
         for h in range(self.args.n_hop):
+            memories_h = []
+            memories_r = []
+            memories_t = []
             if h == 0:
                 tails_of_last_hop = hist_buy_idx_list
             else:
@@ -202,7 +210,7 @@ class my_RippleNet:
             memories_h = [memories_h[i] for i in indices]
             memories_r = [memories_r[i] for i in indices]
             memories_t = [memories_t[i] for i in indices]
-            ripple_set[h].append((memories_h, memories_r, memories_t))
+            ripple_set[h]=(memories_h, memories_r, memories_t)
         return ripple_set[hop]
 
     def data_parse(self, data):
@@ -262,14 +270,21 @@ class my_RippleNet:
         相加和list聚合最后的结果是不一样的，相加，会有7个item的list，x_other只有4个item的list
         memories_r本身就是list套list，所以不怕
         """
-        x=[item_list] + memories_h + memories_r + memories_t+ [remain_list],label_list
-        return x
+        item_list=np.array(item_list)
+        remain_list=np.array(item_list)
+        label_list=np.array(label_list)
+        x=[item_list] + memories_h + memories_r + memories_t+ [remain_list]
+        x_other=[item_list,memories_h,memories_r,memories_t,remain_list]
+        return [item_list] + memories_h + memories_r + memories_t+ [remain_list],label_list
 
     def train(self):
         print("train model ...")
         self.model.summary()
         # X, y = self.data_parse(self.train_data)
         X, y = self.choujiang_data_parse(self.train_data)
+        print('num of train sample  %.1f',len(y))
+        print('label 1 num  %.1f',sum(y))
+
         tensorboard = TensorBoard(log_dir=self.log_path, histogram_freq=1)
         early_stopper = EarlyStopping(patience=self.patience, verbose=1)
         model_checkpoint = ModelCheckpoint(self.save_path, verbose=1, save_best_only=True)
@@ -287,11 +302,12 @@ class my_RippleNet:
         print("evaluate model ...")
         # X, y = self.data_parse(self.test_data)
         X, y = self.choujiang_data_parse(self.test_data)
+
         score = model.evaluate(X, y, batch_size=self.batch_size)
         print("- loss: {} "
-              "- binary_accuracy: {} "
+              # "- binary_accuracy: {} "
               "- auc: {} "
-              "- f1: {} "
+              # "- f1: {} "
               "- precision: {} "
               "- recall: {}".format(*score))
 
@@ -301,8 +317,8 @@ class my_RippleNet:
         # X, y = self.data_parse(self.test_data)
         X, y = self.choujiang_data_parse(self.test_data)
         pred = model.predict(X, batch_size=self.batch_size)
-        result = [1 if x > 0.5 else 0 for x in pred]
-        return result
+        result = [1 if x > 0.3 else 0 for x in pred]
+        return result,pred,y
 
     def update_item_embedding(self, item_embeddings, o, l2):
         # transformation matrix for updating item embeddings at the end of each hop
