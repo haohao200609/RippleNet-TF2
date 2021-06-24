@@ -16,9 +16,9 @@ class LoadData:
         return train_data, test_data, n_entity, n_relation, ripple_set
 
     def load_choujiang_data(self):
-        n_entity, n_relation, kg, entity_map_dict, relation_map_dict=self.load_choujiang_kg()
+        n_entity, n_relation, kg, entity_map_dict, relation_map_dict,id_eneity_map,id_relation_map=self.load_choujiang_kg()
         train_data, test_data=self.load_choujiang_file(entity_map_dict)
-        return train_data, test_data,n_entity, n_relation, kg, entity_map_dict, relation_map_dict
+        return train_data, test_data,n_entity, n_relation, kg, entity_map_dict, relation_map_dict,id_eneity_map,id_relation_map
 
     """
     返回的全部都是有交互的数据
@@ -143,7 +143,10 @@ class LoadData:
             kg[head].append((tail, relation))
         n_entity=len(entity_map_dict.keys())
         n_relation=len(relation_map_dict.keys())
-        return n_entity, n_relation, kg,entity_map_dict,relation_map_dict
+
+        id_eneity_map={v: k for k, v in entity_map_dict.items()}
+        id_relation_map={v: k for k, v in relation_map_dict.items()}
+        return n_entity, n_relation, kg,entity_map_dict,relation_map_dict,id_eneity_map,id_relation_map
 
     def load_kg(self):
         print('reading KG file ...')

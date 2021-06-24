@@ -22,7 +22,7 @@ class my_RippleNet:
         self.data_info = LoadData(args)
         # self.train_data, self.test_data, self.n_entity, self.n_relation, self.ripple_set = self.data_info.load_data()
 
-        self.train_data, self.test_data, self.n_entity, self.n_relation, self.kg, self.entity_map_dict, self.relation_map_dict=self.data_info.load_choujiang_data()
+        self.train_data, self.test_data, self.n_entity, self.n_relation, self.kg, self.entity_map_dict, self.relation_map_dict,self.id_entity_map,self.id_relation_map=self.data_info.load_choujiang_data()
 
         self.model = self.build_model()
 
@@ -237,7 +237,10 @@ class my_RippleNet:
         # memories_t = [memories_t[i] for i in indices]
         # ripple_set[user].append((memories_h, memories_r, memories_t))
 
+        if len(hist_buy_idx_list)==1:
+            if self.id_entity_map[hist_buy_idx_list[0]]=='-999':
 
+                a=1
         ripple_set = {}
         for h in range(self.args.n_hop):
             memories_h = []
