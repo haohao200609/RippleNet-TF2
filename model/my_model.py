@@ -56,7 +56,9 @@ class my_RippleNet:
         # Input Tensor
         item_inputs = Input(shape=(), name="items", dtype=tf.int32)
 
-        remain_inputs= Input(shape=(), name="remain", dtype=tf.int32)
+        remain_inputs= Input(shape=(5,), name="remain", dtype=tf.int32)
+        remain_relation_inputs=Input(shape=(5,), name="remain_relation_inputs", dtype=tf.int32)
+
         # label_inputs = Input(shape=(), name="labels", dtype=tf.float32)
         h_inputs = []
         r_inputs = []
@@ -66,6 +68,7 @@ class my_RippleNet:
             h_inputs.append(Input(shape=(self.n_memory,), name="h_inputs_{}".format(hop), dtype=tf.int32))
             r_inputs.append(Input(shape=(self.n_memory,), name="r_inputs_{}".format(hop), dtype=tf.int32))
             t_inputs.append(Input(shape=(self.n_memory,), name="t_inputs_{}".format(hop), dtype=tf.int32))
+
 
         # Matmul layer
         matmul = Lambda(lambda x: tf.matmul(x[0], x[1]))
@@ -100,6 +103,46 @@ class my_RippleNet:
             # [batch size, n_memory, dim]
             t_embeddings.append(entity_embedding(t_inputs[hop]))
 
+        # # [batch size, 5, dim]
+        # remain_embeddings=entity_embedding(remain_inputs)
+        # # [batch size, 5, dim, dim]
+        # remain_relation_embeddings=relation_embedding(remain_relation_inputs)
+        # # [batch_size, 5, dim, 1]
+        # reshape_remain=ExpandDims(3)(remain_embeddings)
+        #
+        # # [batch_size, 5, dim, 1]
+        # rh_remain=matmul([remain_relation_inputs,reshape_remain])
+        # rh_remain=tf.keras.layers.Flatten(rh_remain)
+
+
+        """
+        weight sum 权重相乘来转换remain embedding
+        """
+        # [batch size, 5, dim]
+        remain_embeddings = entity_embedding(remain_inputs)
+        # [batch_size,dim,1]
+        item_v=ExpandDims(2)(item_embeddings)
+        # [batch_size,n_remain,1]
+        remain_prob=Squeeze(2)(matmul([remain_embeddings, item_v]))
+        remain_prob_normalized=Softmax()(remain_prob)
+        # # [batch_size, n_remain, 1]
+        remain_prob_normalized=ExpandDims(2)(remain_prob_normalized)
+        # [batch_size, dim]
+        remain_combine_embedding=keras.backend.sum(remain_embeddings * remain_prob_normalized, axis=1)
+
+
+        # """
+        # concatenate 直接网络dense转换，remain embedding
+        # """
+        # # [batch size, 5, dim]
+        # remain_embeddings = entity_embedding(remain_inputs)
+        # rh_remain = tf.keras.layers.Flatten()(remain_embeddings)
+        # print('debug rh_remain.shape')
+        # print(rh_remain.shape)
+        # remain_combine_embedding=Dense(self.dim,input_dim=40, use_bias=False, kernel_initializer='glorot_uniform', kernel_regularizer=l2,activation='relu')(rh_remain)
+        # remain_combine_embedding=tf.keras.layers.Dropout(0.2)(remain_combine_embedding)
+
+
         # update item embedding
         o_list = []
         for hop in range(self.n_hop):
@@ -133,6 +176,11 @@ class my_RippleNet:
             for i in range(self.n_hop - 1):
                 y += o_list[i]
 
+        # 加上剩余物品的向量映射
+        y+=remain_combine_embedding
+
+        # sum
+
         # Output
         scores = Squeeze()(keras.backend.sum(item_embeddings * y, axis=1))
         scores_normalized = Activation('sigmoid', name='score')(scores)
@@ -157,7 +205,8 @@ class my_RippleNet:
             t_expanded = ExpandDims(3)(t_embeddings[hop])
             # @矩阵相乘
             hRt = Squeeze()(h_expanded @ r_embeddings[hop] @ t_expanded)
-            kge_loss += keras.backend.mean(Activation('sigmoid')(hRt))
+            # kge_loss += keras.backend.mean(Activation('sigmoid')(hRt))
+            kge_loss += keras.backend.mean(Activation('relu')(hRt))
 
         l2_loss = 0  # l2 loss
         for hop in range(self.n_hop):
@@ -213,22 +262,22 @@ class my_RippleNet:
             ripple_set[h]=(memories_h, memories_r, memories_t)
         return ripple_set[hop]
 
-    def data_parse(self, data):
-        # build X, y from data
-        np.random.shuffle(data)
-        items = data[:, 1]
-        labels = data[:, 2]
-        memories_h = list(range(self.n_hop))
-        memories_r = list(range(self.n_hop))
-        memories_t = list(range(self.n_hop))
-        for hop in range(self.n_hop):
-            memories_h[hop] = np.array([self.ripple_set[user][hop][0] for user in data[:, 0]])
-            memories_r[hop] = np.array([self.ripple_set[user][hop][1] for user in data[:, 0]])
-            memories_t[hop] = np.array([self.ripple_set[user][hop][2] for user in data[:, 0]])
-        x=[items, labels, memories_h , memories_r , memories_t]
-        # return [items, labels] + memories_h + memories_r + memories_t, labels
-
-        return [items] + memories_h + memories_r + memories_t, labels
+    # def data_parse(self, data):
+    #     # build X, y from data
+    #     np.random.shuffle(data)
+    #     items = data[:, 1]
+    #     labels = data[:, 2]
+    #     memories_h = list(range(self.n_hop))
+    #     memories_r = list(range(self.n_hop))
+    #     memories_t = list(range(self.n_hop))
+    #     for hop in range(self.n_hop):
+    #         memories_h[hop] = np.array([self.ripple_set[user][hop][0] for user in data[:, 0]])
+    #         memories_r[hop] = np.array([self.ripple_set[user][hop][1] for user in data[:, 0]])
+    #         memories_t[hop] = np.array([self.ripple_set[user][hop][2] for user in data[:, 0]])
+    #     x=[items, labels, memories_h , memories_r , memories_t]
+    #     # return [items, labels] + memories_h + memories_r + memories_t, labels
+    #
+    #     return [items] + memories_h + memories_r + memories_t, labels
 
 
     # 解析输入数据，并且把输入数据，满足网络结构
@@ -271,7 +320,7 @@ class my_RippleNet:
         memories_r本身就是list套list，所以不怕
         """
         item_list=np.array(item_list)
-        remain_list=np.array(item_list)
+        remain_list=np.array(remain_list)
         label_list=np.array(label_list)
         x=[item_list] + memories_h + memories_r + memories_t+ [remain_list]
         x_other=[item_list,memories_h,memories_r,memories_t,remain_list]
@@ -322,7 +371,7 @@ class my_RippleNet:
 
     def update_item_embedding(self, item_embeddings, o, l2):
         # transformation matrix for updating item embeddings at the end of each hop
-        transform_matrix = Dense(self.dim, use_bias=False, kernel_initializer='glorot_uniform', kernel_regularizer=l2)
+        transform_matrix = Dense(self.dim, use_bias=False, kernel_initializer='glorot_uniform', kernel_regularizer=l2,activation='relu')
         if self.item_update_mode == "replace":
             item_embeddings = o
         elif self.item_update_mode == "plus":
@@ -331,6 +380,10 @@ class my_RippleNet:
             item_embeddings = transform_matrix(o)
         elif self.item_update_mode == "plus_transform":
             item_embeddings = transform_matrix(item_embeddings + o)
+        elif self.item_update_mode == "plus_transform_drop_out":
+            item_embeddings = transform_matrix(item_embeddings + o)
+            drop_layer=tf.keras.layers.Dropout(0.2)
+            item_embeddings=drop_layer(item_embeddings)
         else:
             raise Exception("Unknown item updating mode: " + self.item_update_mode)
         return item_embeddings
