@@ -80,7 +80,7 @@ class LoadData:
         return idx_hist_list
 
     def load_choujiang_file(self,entity_map_dict):
-        print('reading choujiang file...')
+        # print('reading choujiang file...')
         choujiang_file=self.data_path  + '/tf_kg_train.txt'
         choujiang_file = self.data_path + '/tf_kg_train_all.txt'
         total_data=[]
@@ -118,7 +118,7 @@ class LoadData:
 
 
     def load_choujiang_kg(self):
-        print('reading KG file ...')
+        # print('reading KG file ...')
         file_name = self.data_path + '/kg_build.txt'
 
         entity_map_dict={}

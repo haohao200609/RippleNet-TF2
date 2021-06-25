@@ -330,12 +330,12 @@ class my_RippleNet:
         return [item_list] + memories_h + memories_r + memories_t+ [remain_list],label_list
 
     def train(self):
-        print("train model ...")
-        self.model.summary()
+        # print("train model ...")
+        # self.model.summary()
         # X, y = self.data_parse(self.train_data)
         X, y = self.choujiang_data_parse(self.train_data)
-        print('num of train sample  %.1f',len(y))
-        print('label 1 num  %.1f',sum(y))
+        # print('num of train sample  %.1f',len(y))
+        # print('label 1 num  %.1f',sum(y))
 
         tensorboard = TensorBoard(log_dir=self.log_path, histogram_freq=1)
         early_stopper = EarlyStopping(patience=self.patience, verbose=1)
@@ -345,23 +345,26 @@ class my_RippleNet:
                        y=y,
                        batch_size=self.batch_size,
                        epochs=self.epochs,
+                       verbose=0,
                        validation_split=0.2,
                        callbacks=[early_stopper, model_checkpoint, learning_rate_scheduler, tensorboard])
 
     def evaluate(self):
         model = self.build_model()
         model.load_weights(self.save_path)
-        print("evaluate model ...")
+        # print("evaluate model ...")
         # X, y = self.data_parse(self.test_data)
         X, y = self.choujiang_data_parse(self.test_data)
 
         score = model.evaluate(X, y, batch_size=self.batch_size)
-        print("- loss: {} "
-              # "- binary_accuracy: {} "
-              "- auc: {} "
-              # "- f1: {} "
-              "- precision: {} "
-              "- recall: {}".format(*score))
+        # print("- loss: {} "
+        #       # "- binary_accuracy: {} "
+        #       "- auc: {} "
+        #       # "- f1: {} "
+        #       "- precision: {} "
+        #       "- recall: {}".format(*score))
+        result="- loss: {} - auc: {} - precision: {} - recall: {} ".format(*score)
+        return result,score[1]
 
     def predict(self):
         model = self.build_model()
