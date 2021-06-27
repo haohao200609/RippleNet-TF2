@@ -119,7 +119,16 @@ class LoadData:
 
     def load_choujiang_kg(self):
         # print('reading KG file ...')
+
+        """
+        这里是直接把remain embedding直接取出来作为最终结果的
+        """
         file_name = self.data_path + '/kg_build.txt'
+
+        """
+        这里是直接把remain embedding放入kg中进行处理的
+        """
+        file_name = self.data_path + '/kg_build_with_remain.txt'
 
         entity_map_dict={}
         relation_map_dict={}
